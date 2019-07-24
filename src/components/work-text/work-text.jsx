@@ -1,68 +1,80 @@
-import React, { useState } from "react";
+import React from "react";
 import Promise from 'bluebird'
 import woText from './work.txt'
+import { HighterComponet } from '../mixin'
 import Markdown from 'markdown'
 import wheel from 'mouse-wheel'
 
 const toHTML = Markdown.markdown.toHTML
 
+@HighterComponet
 class workText extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      flipped: false,
       preview: true,
       show: false,
       workText: woText,
-      mdText: toHTML(woText)
+      mdText: toHTML(woText),
+      flipped: false,
+      work: this.props.work || '',
+    }
+    this.write = this.write.bind(this)
+    this.showWorkBox = this.showWorkBox.bind(this)
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if(nextProps.work && nextProps.work !== this.props.work) {
+      this.setState({
+        work: nextProps.work
+      })
     }
   }
 
-  getClass = () => {
-    return this.state.flipped ? 'flipped' : ''
+  async write () {
+    this.setState({ show: true })
+    await this.props.writeTo(this.workref, this.state.workText, 0, this.speed, false, 1)
   }
 
-  write = async () => {
-    this.show = true
-    await this.writeTo(this.$el, workText, 0, this.speed, false, 1)
-  }
-
-  showWorkBox() {
-    const { flipped } = this.state;
+  async showWorkBox () {
     this.setState({
       show: true,
       preview: false,
       flipped: true
     },() => {
-      this.$el.scrollTop = 9999
+      this.workref.scrollTop = 9999 
       let flipping = false
-      wheel(this.$el, async function (dx, dy) {
+      wheel(this.workref, async function (dx, dy) {
         if (flipping) {
           return
         }
-        let half = (this.$el.scrollHeight - this.$el.clientHeight) / 2
-        let pastHalf = flipped ? this.$el.scrollTop < half : this.$el.scrollTop > half
-
+        let half = (this.workref.scrollHeight - this.workref.clientHeight) / 2
+        let pastHalf = this.state.flipped ? this.workref.scrollTop < half : this.workref.scrollTop > half
         if (pastHalf) {
-          this.setState({
-            flipped: !flipped
+          this.setState({ flipped: !this.state.flipped },async function (){
+            flipping = true
+            await Promise.delay(500)
+            this.workref.scrollTop = this.state.flipped ? 9999 : 0
+            flipping = false
           })
-          flipping = true
-          await Promise.delay(500)
-          this.$el.scrollTop = flipped ? 9999 : 0
-          flipping = false
         }
-        this.$el.scrollTop += (dy * (flipped ? -1 : 1))
+        this.workref.scrollTop += (dy * (this.state.flipped ? -1 : 1))
+        
       }.bind(this), true)
     })
   }
 
   render() {
-    const { show, text, workText, mdText, preview } = this.state;
+    const { show, work, workText, mdText, preview, flipped } = this.state;
     return (
-      <pre id="work-text" className={this.getClass()} style={{visibility: !show}}>
+      <pre 
+        id="work-text" 
+        ref={workref => this.workref = workref}  
+        className={flipped ? 'flipped' : ''} 
+        style={{visibility: !show ? 'hidden' : 'visible'}}
+      >
         {
-          preview ? <div dangerouslySetInnerHTML={{__html: text}}></div> :
+          preview ? <div dangerouslySetInnerHTML={{__html: work}}></div> :
           <div>
             <div className="text" dangerouslySetInnerHTML={{__html: workText}}></div>
             <div className="md" dangerouslySetInnerHTML={{__html: mdText}}></div>

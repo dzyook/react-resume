@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import './footer.styl'
 
 const STATE_RUNNING = 0
@@ -15,11 +15,10 @@ class footer extends React.Component {
   togglePause = () => {
     this.setState({
       playState: this.state.playState === STATE_RUNNING ? STATE_PAUSED : STATE_RUNNING
-    })
-    // this.$root.$emit('togglePause', this.state)
+    },() => this.props.togglePause(this.state.playState))
   }
   skip = () => {
-    // this.$root.$emit('skip')
+    this.props.skip()
   }
   end = () => {
     this.setState({
@@ -30,8 +29,8 @@ class footer extends React.Component {
     const { isEnd, playState } = this.state
     return (
       <footer>
-        <a href="#" style={{visibility: !isEnd}} onClick={this.togglePause}>{ pauseText[playState] }</a>
-        <a href="#" style={{visibility: !isEnd}} onClick={this.skip}>跳过动画 --></a>
+        <a href="#" style={{visibility: isEnd ? 'hidden' : 'visible'}} onClick={this.togglePause}>{ pauseText[playState] }</a>
+        <a href="#" style={{visibility: isEnd ? 'hidden' : 'visible'}} onClick={this.skip}>跳过动画 --></a>
         <span>
           <svg width="26" height="28" className="icon" viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path
             fillRule="evenodd"
